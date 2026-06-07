@@ -351,39 +351,13 @@ async def run_command(command: str, timeout: int = 10) -> str:
 async def count_syllables(text: str) -> str:
     """Count syllables in each line of text. Returns per-line counts and total."""
     import re
+    import syllapy
 
     def _count_word(word: str) -> int:
         word = word.lower().strip(".,!?;:'\"()-")
         if not word:
             return 0
-        # Common exceptions
-        exceptions = {
-            'the': 1, 'be': 1, 'are': 1, 'were': 1, 'one': 1, 'once': 1,
-            'there': 1, 'here': 1, 'where': 1, 'states': 1, 'space': 1,
-            'entangled': 3, 'separated': 4, 'particles': 3, 'quantum': 2,
-            'universe': 3, 'distance': 2, 'mirrors': 2, 'collapse': 2,
-            'measure': 2, 'measured': 2, 'between': 2, 'across': 2,
-            'becomes': 2, 'before': 2, 'entwined': 2, 'aligned': 2,
-        }
-        if word in exceptions:
-            return exceptions[word]
-        # Count vowel groups
-        vowels = 'aeiouy'
-        count = 0
-        prev_vowel = False
-        for ch in word:
-            is_vowel = ch in vowels
-            if is_vowel and not prev_vowel:
-                count += 1
-            prev_vowel = is_vowel
-        # Subtract silent e at end (but not for short words)
-        if word.endswith('e') and not word.endswith('le') and len(word) > 3 and count > 1:
-            count -= 1
-        # Words ending in 'es' or 'ed' — often silent
-        if (word.endswith('es') or word.endswith('ed')) and count > 1:
-            if word[-3] not in vowels:
-                count -= 1
-        return max(count, 1)
+        return max(syllapy.count(word), 1)
 
     lines = [l.strip() for l in text.strip().split('\n') if l.strip()]
     results = []

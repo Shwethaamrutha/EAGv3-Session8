@@ -186,6 +186,8 @@ body {
 #answer-output td { padding: 8px 12px; border: 1px solid #1e293b; color: #e2e8f0; }
 #answer-output tr:nth-child(even) td { background: #0a0f1a; }
 #answer-output code { background: #1e293b; padding: 2px 6px; border-radius: 3px; font-size: 12px; font-family: 'SF Mono', monospace; color: #e2e8f0; }
+#answer-output a { color: #64748b; text-decoration: none; border-bottom: 1px solid #334155; }
+#answer-output a:hover { color: #94a3b8; }
 #answer-output pre { background: #0d1117; padding: 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid #1e293b; }
 #answer-output pre code { background: none; padding: 0; }
 #answer-output blockquote { border-left: 3px solid #4f46e5; padding-left: 14px; color: #94a3b8; margin: 10px 0; }
@@ -241,7 +243,6 @@ body {
         <button id="run-btn" onclick="runQuery()">Run DAG</button>
         <button id="stop-btn" class="btn-secondary" onclick="stopQuery()" style="display:none;background:#7f1d1d;color:#fca5a5;">Stop</button>
         <button id="resume-btn" class="btn-secondary" onclick="resumeQuery()" style="display:none;background:#1e3a2e;color:#6ee7b7;">Resume</button>
-        <button class="btn-secondary" onclick="loadSessions()">Sessions</button>
         <button class="btn-secondary" onclick="clearState()" style="flex:0.5">Clear</button>
       </div>
     </div>

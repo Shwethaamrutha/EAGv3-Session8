@@ -15,7 +15,7 @@ Fixes over v1:
 from __future__ import annotations
 
 import sys
-import sys; sys.path.insert(0, "agent")
+sys.path.insert(0, "agent")
 
 import asyncio
 import json
@@ -163,6 +163,23 @@ class Graph:
             has_node_ref = any(r.startswith("n:") for r in resolved if isinstance(r, str))
             if not has_node_ref:
                 self.g.add_edge(parent_id, nid)
+
+        # Fix planner-emitted sandbox: ensure it depends on coder, not planner
+        for i, spec_dict in enumerate(raw_nodes):
+            if spec_dict.get("skill") == "sandbox_executor":
+                sandbox_id = added_ids[i]
+                # Find coder in this batch
+                for j, other in enumerate(raw_nodes):
+                    if other.get("skill") == "coder":
+                        coder_id = added_ids[j]
+                        if not self.g.has_edge(coder_id, sandbox_id):
+                            self.g.add_edge(coder_id, sandbox_id)
+                        # Remove edge from parent (planner) to sandbox if coder edge exists
+                        if self.g.has_edge(parent_id, sandbox_id):
+                            self.g.remove_edge(parent_id, sandbox_id)
+                        # Set sandbox inputs to reference coder
+                        self.g.nodes[sandbox_id]["inputs"] = [coder_id]
+                        break
 
         # Auto-insert internal_successors (e.g., sandbox_executor after coder)
         # Also rewire any downstream nodes that reference the coder to reference
@@ -482,8 +499,10 @@ class Executor:
         if failure_report:
             inputs["FAILURE"] = failure_report
 
+        from datetime import date as _date
         prompt = skill.render_prompt(inputs, memory_hits=self.memory_hits_text)
-        user_msg = query if not failure_report else f"FAILURE: {failure_report}\n\nOriginal query: {query}"
+        date_prefix = f"Today is {_date.today().isoformat()}. "
+        user_msg = date_prefix + query if not failure_report else f"FAILURE: {failure_report}\n\nOriginal query: {date_prefix}{query}"
 
         resp = gateway.chat(
             messages=[
@@ -524,6 +543,13 @@ class Executor:
         inputs = attrs.get("inputs", [])
         metadata = attrs.get("metadata", {})
         question = metadata.get("question", "")
+
+        # Fallback: if no question in metadata but inputs has a plain text string, use it
+        if not question:
+            for inp in inputs:
+                if inp != "USER_QUERY" and not inp.startswith("n:") and not inp.startswith("art:"):
+                    question = inp
+                    break
 
         # Resolve upstream node outputs into structured data
         resolved_inputs = {}
@@ -1011,7 +1037,7 @@ class Executor:
                 self._recovery_count["critic_fail"] = self._recovery_count.get("critic_fail", 0) + 1
                 recovery_id = self.graph.add_node("planner", ["USER_QUERY"], {
                     "label": f"recovery_{self.graph._counter}",
-                    "failure_report": f"Critic FAILED. Rationale: {rationale}. The previous plan produced output that did not satisfy the constraint. You must choose a DIFFERENT approach this time — repeating the same plan will produce the same failure.",
+                    "failure_report": f"Critic FAILED. Rationale: {rationale}. The previous plan (formatter → critic) did not satisfy the constraint. Try a different generation approach but ALWAYS include a critic node to verify the constraint again.",
                 })
                 # Add edge from critic to recovery for graph visualization
                 self.graph.g.add_edge(node_id, recovery_id)
@@ -1065,16 +1091,8 @@ class Executor:
             if d.get("skill") == "critic" and d.get("status") == "complete":
                 result = d.get("result")
                 if isinstance(result, AgentResult) and result.output.get("verdict") == "pass":
-                    # Check if there's a formatter AFTER this critic (successor)
-                    for succ in self.graph.g.successors(nid):
-                        succ_d = self.graph.g.nodes[succ]
-                        if succ_d.get("skill") == "formatter" and succ_d.get("status") == "complete":
-                            succ_result = succ_d.get("result")
-                            if isinstance(succ_result, AgentResult):
-                                answer = succ_result.output.get("final_answer", "") or succ_result.output.get("text", "") or succ_result.text
-                                if answer:
-                                    return answer
-                    # No formatter after critic — use what fed the critic
+                    # What the critic verified — find the content that passed
+                    # Look at predecessor (formatter or sandbox that fed the critic)
                     for pred in self.graph.g.predecessors(nid):
                         pred_d = self.graph.g.nodes[pred]
                         pred_result = pred_d.get("result")

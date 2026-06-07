@@ -64,16 +64,36 @@ class GatewayClient:
             import openai
             self.nvidia_client = openai.OpenAI(base_url=NVIDIA_BASE_URL, api_key=self.nvidia_key)
 
-        # Bedrock: resolve credentials via `aws configure export-credentials`
-        # This supports login_session profiles that boto3 can't read natively
+        # Bedrock: use default credentials (static keys, never expire)
         self.bedrock = None
         try:
             import boto3
+            self.bedrock = boto3.client("bedrock-runtime", region_name=self.aws_region)
+        except Exception:
+            pass
+
+    def _refresh_bedrock(self):
+        """Refresh Bedrock client with fresh credentials. Calls aws login if needed."""
+        try:
+            import boto3
             import subprocess
+            from datetime import datetime
+
             result = subprocess.run(
                 ["aws", "configure", "export-credentials", "--profile", self.aws_profile, "--format", "process"],
                 capture_output=True, text=True, timeout=5,
             )
+
+            if result.returncode != 0:
+                subprocess.run(
+                    ["aws", "login", "--profile", self.aws_profile, "--no-browser"],
+                    capture_output=True, text=True, timeout=30,
+                )
+                result = subprocess.run(
+                    ["aws", "configure", "export-credentials", "--profile", self.aws_profile, "--format", "process"],
+                    capture_output=True, text=True, timeout=5,
+                )
+
             if result.returncode == 0:
                 import json as _json
                 cred_data = _json.loads(result.stdout)
@@ -84,12 +104,31 @@ class GatewayClient:
                     region_name=self.aws_region,
                 )
                 self.bedrock = session.client("bedrock-runtime")
-            else:
-                # Fallback: direct profile
-                session = boto3.Session(profile_name=self.aws_profile, region_name=self.aws_region)
-                self.bedrock = session.client("bedrock-runtime")
+
+                # Track expiry time
+                expiry_str = cred_data.get("Expiration", "")
+                if expiry_str:
+                    try:
+                        self._cred_expiry = datetime.fromisoformat(expiry_str.replace("Z", "+00:00")).timestamp()
+                    except:
+                        self._cred_expiry = time.time() + 600  # default 10 min
+                else:
+                    self._cred_expiry = time.time() + 600
         except Exception:
             pass
+
+    def _start_refresh_timer(self):
+        """Background thread that refreshes credentials every 10 minutes."""
+        import threading
+
+        def _refresh_loop():
+            while True:
+                import time as _time
+                _time.sleep(600)  # refresh every 10 minutes
+                self._refresh_bedrock()
+
+        t = threading.Thread(target=_refresh_loop, daemon=True)
+        t.start()
 
     def chat(
         self,
@@ -104,17 +143,16 @@ class GatewayClient:
     ) -> GatewayResponse:
         start = time.time()
 
-        # Try Bedrock first (reliable, no rate limits)
+        # Bedrock only
         if self.bedrock:
             resp = self._call_bedrock(messages, tools, tool_choice, response_format, temperature, max_tokens)
+            resp.latency_ms = (time.time() - start) * 1000
             if not resp.is_error:
-                resp.latency_ms = (time.time() - start) * 1000
                 self._trace(auto_route, messages, tools, resp)
-                return resp
-            log.info("bedrock_failed_trying_nvidia", error=resp.text[:80] if resp.text else "")
+            return resp
 
-        # Fallback to NVIDIA
-        if self.nvidia_client:
+        # All fallbacks disabled — Bedrock only
+        if False and self.nvidia_client:
             resp = self._call_nvidia(messages, tools, tool_choice, response_format, temperature)
             if not resp.is_error:
                 resp.latency_ms = (time.time() - start) * 1000
@@ -122,13 +160,9 @@ class GatewayClient:
                 return resp
             log.info("nvidia_failed_trying_gemini", error=resp.text[:80] if resp.text else "")
 
-        # Final fallback to Gemini
-        gemini_key = os.getenv("GEMINI_API_KEY", "")
-        if gemini_key:
-            resp = self._call_gemini_chat(messages, tools, tool_choice, response_format, temperature)
-            resp.latency_ms = (time.time() - start) * 1000
-            self._trace(auto_route, messages, tools, resp)
-            return resp
+        # Gemini fallback disabled — Bedrock only
+        if False:
+            pass
 
         return GatewayResponse(is_error=True, text="[gateway error: no providers configured]")
 
