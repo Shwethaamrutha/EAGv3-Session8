@@ -41,21 +41,27 @@
 │  ◆◆ PLANNER ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆  │
 │  Reads: query + memory hits                                                  │
 │  Outputs: JSON DAG — skill nodes with typed inputs and dependencies          │
-└────────────┬──────────────┬──────────────┬──────────────────────────────────┘
-             │              │              │
-             ▼              ▼              ▼
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  ★★ EXECUTOR ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★  │
-│  Runs nodes concurrently (asyncio.gather) when dependencies are met          │
-│  Persists graph after each node · Classifies failures · Queues recovery      │
+│  Runs ready nodes concurrently · Persists after each · Handles failures      │
 │                                                                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
-│  │researcher│  │  coder   │  │  critic  │  │  shell   │  │fact_check│     │
-│  │web_search│  │  Python  │  │count_syl │  │run_commd │  │ 2-search │     │
-│  │fetch_url │  │    ↓     │  │count_chr │  │  grep    │  │ verdict  │     │
-│  └──────────┘  │ sandbox  │  └──────────┘  │  find    │  └──────────┘     │
-│                │ executor │                 └──────────┘                    │
-│                └──────────┘                                                  │
+│  Available Skills:                                                           │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                                                                        │  │
+│  │  researcher     web_search, fetch_url — fetches from the web           │  │
+│  │  retriever      search_knowledge — queries FAISS index                 │  │
+│  │  coder          writes Python → sandbox_executor runs it               │  │
+│  │  critic         count_syllables, count_characters — tool verification  │  │
+│  │  shell          run_command — executes system commands                  │  │
+│  │  fact_checker   web_search × 2 — confirms/disputes claims              │  │
+│  │  comparator     ranks and selects from multiple inputs                 │  │
+│  │  distiller      extracts structured fields from text                   │  │
+│  │  summariser     condenses long content                                 │  │
+│  │                                                                        │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
 │                                                                              │
 │  Failure policy:                                                             │
 │    transient → skip · validation → skip · upstream → recovery planner        │
@@ -76,6 +82,7 @@
 │  Atomic writes (tmp + os.replace) · Resume from any checkpoint               │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
 
 
 
