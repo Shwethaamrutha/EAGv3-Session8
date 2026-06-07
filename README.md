@@ -310,7 +310,14 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 </details>
 
+<details><summary><b>Click to expand: Custom Query 5 — Fact Checker </b></summary>
 
+-------
+
+![C5-1](https://github.com/Shwethaamrutha/EAGv3-Session8/blob/main/screenshots/fact-checker-1.png)
+![C5-2](https://github.com/Shwethaamrutha/EAGv3-Session8/blob/main/screenshots/fact-checker-2.png)
+
+</details>
 -------
 
 
