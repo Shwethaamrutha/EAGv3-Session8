@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+state/sessions/
+state/memory.json
+state/index.faiss
+state/index_ids.json
+state/artifacts/
+*.tmp
+.DS_Store
+uv.lock
