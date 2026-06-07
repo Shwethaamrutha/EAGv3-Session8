@@ -201,7 +201,6 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 - **Session replay** — load past sessions with full graph and logs
 - **Stop/Resume** — kill execution, persist state, continue later
 
----
 
 ---
 
