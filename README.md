@@ -203,6 +203,99 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 ---
 
+---
+
+## Query Traces & Evidence
+
+> All screenshots below show actual ΛXÖN dashboard output with live DAG graph, grouped logs, and Node I/O.
+
+### Base Queries
+
+| Query | Description | Nodes |
+|-------|-------------|-------|
+| A | Shannon Wikipedia (fetch + extract) | 3 |
+| I | Populations parallel fan-out (London, Paris, Berlin) | 6 |
+| J | Graceful failure (/nonexistent/path.txt) | 2 |
+| K | Resume (kill mid-run + resume from checkpoint) | 6 |
+
+### Custom Queries
+
+| Query | Description | Skills Used |
+|-------|-------------|-------------|
+| 1 | Multi-skill chain (LOC count + web compare) | shell, researcher, comparator, formatter |
+| 2 | NVIDIA analysis (price + investment + verification) | researcher, coder, sandbox, fact_checker, formatter |
+| 3 | Critic FAIL + recovery (140-char tweet) | formatter, critic, coder, sandbox |
+| 4 | Coder + Sandbox (compound interest) | coder, sandbox_executor, formatter |
+
+<details><summary><b>Click to expand: Query A — Shannon Wikipedia</b></summary>
+
+![A-1](screenshots/shannon-q-a-a.png)
+![A-2](screenshots/shannon-q-a-b.png)
+![A-3](screenshots/shannon-q-a-c.png)
+
+</details>
+
+<details><summary><b>Click to expand: Query I — Parallel Fan-out (Populations)</b></summary>
+
+![I-1](screenshots/parallel-q-i-a.png)
+![I-2](screenshots/parallel-q-i-b.png)
+![I-3](screenshots/parallel-q-i-c.png)
+
+</details>
+
+<details><summary><b>Click to expand: Query J — Graceful Failure</b></summary>
+
+![J-1](screenshots/gracefulfailure-q-j-a.png)
+![J-2](screenshots/gracefulfailure-q-j-b.png)
+
+</details>
+
+<details><summary><b>Click to expand: Query K — Resume</b></summary>
+
+![K-1](screenshots/resume-q-k-a.png)
+![K-2](screenshots/resume-q-k-b.png)
+![K-3](screenshots/resume-q-k-c.png)
+![K-4](screenshots/resume-q-k-d.png)
+![K-5](screenshots/resume-q-k-e.png)
+
+</details>
+
+<details><summary><b>Click to expand: Custom Query 1 — Multi-skill Chain</b></summary>
+
+![C1-1](screenshots/Custom-multiskill-q-1a.png)
+![C1-2](screenshots/Custom-multiskill-q-1b.png)
+![C1-3](screenshots/Custom-multiskill-q-1c.png)
+![C1-4](screenshots/Custom-multiskill-q-1d.png)
+![C1-5](screenshots/Custom-multiskill-q-1e.png)
+
+</details>
+
+<details><summary><b>Click to expand: Custom Query 2 — NVIDIA Multi-skill Analysis</b></summary>
+
+![C2-1](screenshots/Custom-multiskill-nvidia-q-2a.png)
+![C2-2](screenshots/Custom-multiskill-nvidia-q-2b.png)
+![C2-3](screenshots/Custom-multiskill-nvidia-q-2c.png)
+![C2-4](screenshots/Custom-multiskill-nvidia-q-2d.png)
+
+</details>
+
+<details><summary><b>Click to expand: Custom Query 3 — Critic FAIL + Recovery</b></summary>
+
+![C3-1](screenshots/critic-q-3a.png)
+![C3-2](screenshots/critic-q-3b.png)
+![C3-3](screenshots/critic-q-3c.png)
+![C3-4](screenshots/critic-q-3d.png)
+
+</details>
+
+<details><summary><b>Click to expand: Custom Query 4 — Coder + Sandbox</b></summary>
+
+![C4-1](screenshots/coder-q-4a.png)
+![C4-2](screenshots/coder-q-4b.png)
+
+</details>
+
+
 ## Running
 
 ```bash
