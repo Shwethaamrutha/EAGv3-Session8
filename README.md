@@ -25,35 +25,71 @@
 ## Architecture
 
 ```
-USER QUERY
-     │
-     ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  PLANNER (LLM)                                                       │
-│  Reads: query + FAISS memory hits                                    │
-│  Emits: JSON graph of skill nodes with typed inputs/outputs          │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │
-          ┌──────────────┼──────────────┐
-          │              │              │
-          ▼              ▼              ▼
-    ┌───────────┐  ┌───────────┐  ┌───────────┐
-    │ researcher│  │ researcher│  │ researcher│    ← parallel via asyncio.gather
-    │ (London)  │  │ (Paris)   │  │ (Berlin)  │
-    └─────┬─────┘  └─────┬─────┘  └─────┬─────┘
-          │              │              │
-          └──────────────┼──────────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │   comparator    │
-                └────────┬────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │    formatter    │  → FINAL ANSWER
-                └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USER QUERY                                       │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ░░ MEMORY.READ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│  FAISS vector search (768-d Gemini embeddings)                               │
+│  Returns: top-k ranked memory hits visible to ALL skill nodes                │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ◆◆ PLANNER ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆  │
+│  Reads: query + memory hits                                                  │
+│  Outputs: JSON DAG of skill nodes with typed inputs/dependencies             │
+│  Decides: which skills, what order, what runs in parallel                    │
+└────────────┬──────────────┬──────────────┬──────────────────────────────────┘
+             │              │              │
+             ▼              ▼              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ★★ EXECUTOR (asyncio.gather) ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★  │
+│                                                                              │
+│  while graph has incomplete nodes:                                           │
+│      ready = nodes whose predecessors are all complete/skipped                │
+│      run ALL ready nodes concurrently via asyncio.gather                     │
+│      for each completed node:                                                │
+│          persist state to disk (atomic write)                                │
+│          extend graph with successors (if any)                               │
+│                                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │researcher│  │  coder   │  │  critic  │  │  shell   │  │fact_check│     │
+│  │web_search│  │  Python  │  │  tools:  │  │run_commd │  │web_search│     │
+│  │fetch_url │  │    ↓     │  │count_syl │  │  grep    │  │ 2 sides  │     │
+│  └──────────┘  │ sandbox  │  │count_chr │  │  find    │  └──────────┘     │
+│                │ executor │  └──────────┘  └──────────┘                    │
+│                └──────────┘                                                  │
+│                                                                              │
+│  On node failure:                                                            │
+│    classify → transient (skip) / validation (skip) / upstream (re-plan)      │
+│  On critic fail:                                                             │
+│    skip child → queue recovery planner → different approach                  │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ◈◈ FORMATTER (terminal node) ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈  │
+│  Receives: upstream node outputs (structured JSON)                           │
+│  Renders: markdown answer for the user                                       │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ▓▓ PERSISTENCE ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+│  state/sessions/<sid>/                                                       │
+│    graph.json    — full DAG (nx.node_link_data)                              │
+│    nodes/n_*.json — per-node state + result                                  │
+│    traces.jsonl  — per-span timing + tokens                                  │
+│                                                                              │
+│  All writes atomic (write-tmp + os.replace)                                  │
+│  Resume: load graph → reset running→pending → continue executor              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+
 
 ---
 
