@@ -143,16 +143,17 @@ class GatewayClient:
     ) -> GatewayResponse:
         start = time.time()
 
-        # Bedrock only
+        # Try Bedrock first (reliable, no rate limits)
         if self.bedrock:
             resp = self._call_bedrock(messages, tools, tool_choice, response_format, temperature, max_tokens)
-            resp.latency_ms = (time.time() - start) * 1000
             if not resp.is_error:
+                resp.latency_ms = (time.time() - start) * 1000
                 self._trace(auto_route, messages, tools, resp)
-            return resp
+                return resp
+            log.info("bedrock_failed_trying_nvidia", error=resp.text[:80] if resp.text else "")
 
-        # All fallbacks disabled — Bedrock only
-        if False and self.nvidia_client:
+        # Fallback to NVIDIA
+        if self.nvidia_client:
             resp = self._call_nvidia(messages, tools, tool_choice, response_format, temperature)
             if not resp.is_error:
                 resp.latency_ms = (time.time() - start) * 1000
@@ -160,9 +161,13 @@ class GatewayClient:
                 return resp
             log.info("nvidia_failed_trying_gemini", error=resp.text[:80] if resp.text else "")
 
-        # Gemini fallback disabled — Bedrock only
-        if False:
-            pass
+        # Final fallback to Gemini
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        if gemini_key:
+            resp = self._call_gemini_chat(messages, tools, tool_choice, response_format, temperature)
+            resp.latency_ms = (time.time() - start) * 1000
+            self._trace(auto_route, messages, tools, resp)
+            return resp
 
         return GatewayResponse(is_error=True, text="[gateway error: no providers configured]")
 
