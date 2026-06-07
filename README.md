@@ -1,4 +1,4 @@
-# ΛXON
+# ΛXÖN
 
 ### Multi-Agent DAG Orchestrator
 
@@ -6,12 +6,12 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
 [![NetworkX](https://img.shields.io/badge/Graph-NetworkX-green)](https://networkx.org)
-[![LLM](https://img.shields.io/badge/LLM-Gateway%20V8-purple)](src/agent/llm_gateway/)(https://aws.amazon.com/bedrock/)
+[![LLM](https://img.shields.io/badge/LLM-Gateway%20V8-purple)](src/agent/llm_gateway/)
 [![FAISS](https://img.shields.io/badge/Memory-FAISS%20768d-orange)](https://github.com/facebookresearch/faiss)
 
 ---
 
-**ΛXON** is a DAG-based multi-agent orchestrator built as Session 8 of the [EAG V3](https://theschoolof.ai) program. It extends the Session 7 single-loop agent (Memory → Perception → Decision → Action) into a growing directed acyclic graph where a Planner decomposes queries into skill nodes, an Executor runs them concurrently via `asyncio.gather`, and a Critic verifies outputs with tool-grounded measurements.
+**ΛXÖN** is a DAG-based multi-agent orchestrator built as Session 8 of the [EAG V3](https://theschoolof.ai) program. It extends the Session 7 single-loop agent (Memory → Perception → Decision → Action) into a growing directed acyclic graph where a Planner decomposes queries into skill nodes, an Executor runs them concurrently via `asyncio.gather`, and a Critic verifies outputs with tool-grounded measurements.
 
 **What makes it different from Session 7:**
 - Parallel execution — three independent sub-tasks run concurrently, not sequentially
@@ -26,26 +26,26 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              USER QUERY                                       │
+│                              USER QUERY                                     │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      │
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ░░ MEMORY.READ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
-│  FAISS vector search (768-d embeddings)                                      │
-│  Returns: top-k ranked hits visible to ALL skill nodes this run              │
+│  ░░ MEMORY.READ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    │
+│  FAISS vector search (768-d embeddings)                                     │
+│  Returns: top-k ranked hits visible to ALL skill nodes this run             │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      │
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ◆◆ PLANNER ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆  │
-│  Reads: query + memory hits                                                  │
-│  Outputs: JSON DAG — skill nodes with typed inputs and dependencies          │
+│  ◆◆ PLANNER ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆          │
+│  Reads: query + memory hits                                                 │
+│  Outputs: JSON DAG — skill nodes with typed inputs and dependencies         │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      │
                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  ★★ EXECUTOR ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★  │
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  ★★ EXECUTOR ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★       │
 │  Runs ready nodes concurrently · Persists after each · Handles failures      │
 │                                                                              │
 │  Available Skills:                                                           │
@@ -55,7 +55,7 @@
 │  │  retriever      search_knowledge — queries FAISS index                 │  │
 │  │  coder          writes Python → sandbox_executor runs it               │  │
 │  │  critic         count_syllables, count_characters — tool verification  │  │
-│  │  shell          run_command — executes system commands                  │  │
+│  │  shell          run_command — executes system commands                 │  │
 │  │  fact_checker   web_search × 2 — confirms/disputes claims              │  │
 │  │  comparator     ranks and selects from multiple inputs                 │  │
 │  │  distiller      extracts structured fields from text                   │  │
@@ -67,19 +67,19 @@
 │    transient → skip · validation → skip · upstream → recovery planner        │
 │  Critic fail:                                                                │
 │    skip child node → queue re-plan with different approach                   │
+└────────────────────────────────────┬─────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ◈◈ FORMATTER ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈        │
+│  Terminal node — renders upstream outputs as markdown answer                │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      │
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ◈◈ FORMATTER ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈  │
-│  Terminal node — renders upstream outputs as markdown answer                  │
-└────────────────────────────────────┬────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  ▓▓ PERSISTENCE ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
-│  state/sessions/<sid>/graph.json + nodes/*.json + traces.jsonl                │
-│  Atomic writes (tmp + os.replace) · Resume from any checkpoint               │
+│  ▓▓ PERSISTENCE ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓       │
+│  state/sessions/<sid>/graph.json + nodes/*.json + traces.jsonl              │
+│  Atomic writes (tmp + os.replace) · Resume from any checkpoint              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -229,6 +229,8 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 <details><summary><b>Click to expand: Query A — Shannon Wikipedia</b></summary>
 
+-------
+
 ![A-1](screenshots/shannon-q-a-a.png)
 ![A-2](screenshots/shannon-q-a-b.png)
 ![A-3](screenshots/shannon-q-a-c.png)
@@ -236,6 +238,8 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 </details>
 
 <details><summary><b>Click to expand: Query I — Parallel Fan-out (Populations)</b></summary>
+
+-------
 
 ![I-1](screenshots/parallel-q-i-a.png)
 ![I-2](screenshots/parallel-q-i-b.png)
@@ -245,12 +249,16 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 <details><summary><b>Click to expand: Query J — Graceful Failure</b></summary>
 
+-------
+
 ![J-1](screenshots/gracefulfailure-q-j-a.png)
 ![J-2](screenshots/gracefulfailure-q-j-b.png)
 
 </details>
 
 <details><summary><b>Click to expand: Query K — Resume</b></summary>
+
+-------
 
 ![K-1](screenshots/resume-q-k-a.png)
 ![K-2](screenshots/resume-q-k-b.png)
@@ -262,6 +270,8 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 <details><summary><b>Click to expand: Custom Query 1 — Multi-skill Chain</b></summary>
 
+-------
+
 ![C1-1](screenshots/Custom-multiskill-q-1a.png)
 ![C1-2](screenshots/Custom-multiskill-q-1b.png)
 ![C1-3](screenshots/Custom-multiskill-q-1c.png)
@@ -272,6 +282,8 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 <details><summary><b>Click to expand: Custom Query 2 — NVIDIA Multi-skill Analysis</b></summary>
 
+-------
+
 ![C2-1](screenshots/Custom-multiskill-nvidia-q-2a.png)
 ![C2-2](screenshots/Custom-multiskill-nvidia-q-2b.png)
 ![C2-3](screenshots/Custom-multiskill-nvidia-q-2c.png)
@@ -280,6 +292,8 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 </details>
 
 <details><summary><b>Click to expand: Custom Query 3 — Critic FAIL + Recovery</b></summary>
+
+-------
 
 ![C3-1](screenshots/critic-q-3a.png)
 ![C3-2](screenshots/critic-q-3b.png)
@@ -290,10 +304,15 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 
 <details><summary><b>Click to expand: Custom Query 4 — Coder + Sandbox</b></summary>
 
+-------
+
 ![C4-1](screenshots/coder-q-4a.png)
 ![C4-2](screenshots/coder-q-4b.png)
 
 </details>
+
+
+-------
 
 
 ## Setup & Running
@@ -375,28 +394,3 @@ agent8/
 ```
 
 ---
-
-## Honest Limitations
-
-1. **Syllable counting** — the critic tool uses a rule-based counter. Not 100% accurate for edge cases (silent-e, compound words). Session 9 forward pointer.
-
-2. **Character-count tasks** — the coder can't reliably write a string of exact length. The model doesn't count while generating. Architecture correctly detects failure via critic, but recovery often fails too.
-
-3. **Mid-tool-call resume** — a researcher killed 3 hops deep into its tool loop restarts from scratch on resume. Only node-boundary persistence.
-
-4. **LLM compliance** — models sometimes return markdown instead of JSON, ignore "no assert" instructions, or hallucinate tools. Contract validation catches this but costs a retry.
-
-
----
-
-## Assignment Checklist
-
-| # | Requirement | Status |
-|---|-------------|--------|
-| 1 | Pass base queries (hello, A, I, J, K) | Done |
-| 2 | Parallel fan-out query (3+ concurrent nodes) | Done — populations query, 3.85x speedup |
-| 3 | Critic pass + fail across runs | Done — tweet 140-char (FAIL) + 3 sentences (PASS) |
-| 4 | Coder skill with computation | Done — compound interest with sandbox verification |
-| 5 | New skill (shell + fact_checker) | Done — YAML + prompt, no orchestrator change |
-| 6 | YouTube demo | [Link TBD] |
-| 7 | README with logs | This file |
