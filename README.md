@@ -296,20 +296,55 @@ Real-time WebSocket dashboard at `http://localhost:8080`:
 </details>
 
 
-## Running
+## Setup & Running
+
+### Prerequisites
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
+### Installation
 
 ```bash
-# Start dashboard
-python dashboard_server.py
-# Open http://localhost:8080
+# Clone
+git clone https://github.com/Shwethaamrutha/EAGv3-Session8.git
+cd EAGv3-Session8
 
-# CLI mode
+# Install dependencies
+uv sync
+
+# Or with pip
+pip install -e .
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys:
+#   NVIDIA_API_KEY=...
+#   GEMINI_API_KEY=...
+#   TAVILY_API_KEY=...
+#   AWS_REGION=us-east-1
+```
+
+### Running the Dashboard
+
+```bash
+cd src
+python ../dashboard/server.py
+# Open http://localhost:8080
+```
+
+### CLI Mode
+
+```bash
+cd src
 python flow.py "Find the populations of London, Paris, Berlin and tell me which two are closest in size"
 
 # Resume a killed session
 python flow.py --resume s8_XXXXXXXX
+```
 
-# Run tests
+### Run Tests
+
+```bash
 python -m pytest tests/test_recovery.py -v
 ```
 
