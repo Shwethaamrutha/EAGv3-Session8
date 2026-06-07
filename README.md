@@ -94,36 +94,6 @@ Skills are defined in `agent_config.yaml` — one YAML entry + one prompt file p
 
 ---
 
-## Performance Comparison
-
-| Query | Session 7 (single-loop) | Session 8 (DAG) | Speedup |
-|-------|------------------------|-----------------|---------|
-| Shannon (fetch + extract) | 24s, 8 iterations | 11s, 3 nodes | 2.2x |
-| Populations (3-city compare) | 125s, 11 iterations | 25-35s, 6 nodes | 3.5-5x |
-| Hello (trivial) | 8s, 2 iterations | 7s, 2 nodes | 1.1x |
-| Graceful failure | 8s, 3 iterations | 3s, 2 nodes | 2.7x |
-
-**Why Session 8 is faster:**
-- Parallel fan-out: 3 researchers run concurrently (wall-clock = max branch, not sum)
-- No cumulative history: each node sees only its inputs, not 10 iterations of context
-- Direct tool dispatch: researchers skip LLM mediation for factual lookups
-
-**Why Session 7 wasn't wrong:**
-- Sequential queries (Shannon) show minimal speedup — DAG overhead ~= loop overhead
-- The DAG wins only when there's real parallelism to exploit
-
----
-
-## Token Efficiency
-
-| Architecture | Populations Query | Why |
-|---|---|---|
-| Session 7 | ~54,000 input tokens | History re-sent every iteration (O(n^2) in iterations) |
-| Session 8 | ~17,000 input tokens | Each node scoped to its inputs only |
-
-The 3x token reduction comes from eliminating the quadratic history growth. Session 7 sends the entire run history to Perception and Decision on every iteration. Session 8 nodes see only their typed inputs.
-
----
 
 ## Recovery and Failure Handling
 
