@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
 [![NetworkX](https://img.shields.io/badge/Graph-NetworkX-green)](https://networkx.org)
-[![Bedrock](https://img.shields.io/badge/LLM-Claude%20Sonnet%204.6-purple)](https://aws.amazon.com/bedrock/)
+[![Bedrock](https://img.shields.io/badge/LLM-AWS%20Bedrock-purple)](https://aws.amazon.com/bedrock/)
 [![FAISS](https://img.shields.io/badge/Memory-FAISS%20768d-orange)](https://github.com/facebookresearch/faiss)
 
 ---
