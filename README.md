@@ -256,7 +256,6 @@ agent8/
 
 4. **LLM compliance** — models sometimes return markdown instead of JSON, ignore "no assert" instructions, or hallucinate tools. Contract validation catches this but costs a retry.
 
-5. **Single provider latency** — all LLM calls go through Bedrock (2-5s each). A production system would route different skills to different providers.
 
 ---
 
